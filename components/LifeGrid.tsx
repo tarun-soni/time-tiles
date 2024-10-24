@@ -10,7 +10,7 @@ import {
 const LifeGrid = ({ yearsToShow = 90 }) => {
   const WEEKS_PER_YEAR = 52;
   const padding = 16; // Total horizontal padding
-  const cellMargin = 1; // Margin on each side of cell
+  const cellMargin = 2; // Margin on each side of cell
 
   // Add state for container width
   const [containerWidth, setContainerWidth] = React.useState(
