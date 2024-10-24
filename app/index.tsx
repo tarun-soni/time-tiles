@@ -4,8 +4,8 @@ import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { SafeAreaView } from '@/components/ui/safe-area-view';
-import LifeGrid from './components/LifeGrid';
-import { Text } from './components/ui/text';
+import LifeGrid from '@/components/LifeGrid';
+import { Text } from '@/components/ui/text';
 
 export default function App() {
   return (
