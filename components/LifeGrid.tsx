@@ -7,7 +7,9 @@ import {
   LayoutChangeEvent,
   Animated,
 } from 'react-native';
-const LifeGrid = ({ yearsToShow = 90 }) => {
+import { Text } from './ui/text';
+
+const LifeGrid = ({ yearsToShow = 90, customCellSize = 2 }) => {
   const WEEKS_PER_YEAR = 52;
   const padding = 16; // Total horizontal padding
   const cellMargin = 2; // Margin on each side of cell
@@ -17,11 +19,13 @@ const LifeGrid = ({ yearsToShow = 90 }) => {
     Dimensions.get('window').width
   );
 
-  // Update cell size calculation to use containerWidth
-  const cellSize = Math.floor(
-    (containerWidth - 2 * padding - WEEKS_PER_YEAR * 2 * cellMargin) /
-      WEEKS_PER_YEAR
-  );
+  // Use customCellSize if provided, otherwise calculate based on containerWidth
+  const cellSize =
+    customCellSize ||
+    Math.floor(
+      (containerWidth - 2 * padding - WEEKS_PER_YEAR * 2 * cellMargin) /
+        WEEKS_PER_YEAR
+    );
 
   const onLayout = (event: LayoutChangeEvent) => {
     const { width } = event.nativeEvent.layout;
@@ -43,9 +47,10 @@ const LifeGrid = ({ yearsToShow = 90 }) => {
                       width: cellSize,
                       height: cellSize,
                       margin: cellMargin,
+                      backgroundColor: 'red',
                     },
                   ]}
-                />
+                ></View>
               ))}
             </View>
           ))}
