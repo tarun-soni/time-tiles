@@ -6,20 +6,24 @@ import {
   Dimensions,
   LayoutChangeEvent,
   Animated,
+  Pressable,
 } from 'react-native';
 import { Text } from './ui/text';
 
-const LifeGrid = ({ yearsToShow = 90, customCellSize = 2 }) => {
+const LifeGrid = ({ yearsToShow = 90, customCellSize = 10 }) => {
   const WEEKS_PER_YEAR = 52;
-  const padding = 16; // Total horizontal padding
-  const cellMargin = 2; // Margin on each side of cell
+  const padding = 16;
+  const cellMargin = 2;
 
-  // Add state for container width
   const [containerWidth, setContainerWidth] = React.useState(
     Dimensions.get('window').width
   );
 
-  // Use customCellSize if provided, otherwise calculate based on containerWidth
+  // Add state for pressed cells
+  const [pressedCells, setPressedCells] = React.useState<Set<string>>(
+    new Set()
+  );
+
   const cellSize =
     customCellSize ||
     Math.floor(
@@ -32,26 +36,45 @@ const LifeGrid = ({ yearsToShow = 90, customCellSize = 2 }) => {
     setContainerWidth(width);
   };
 
+  const toggleCell = (cellId: string) => {
+    console.log('toggleCell', cellId);
+    setPressedCells((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(cellId)) {
+        newSet.delete(cellId);
+      } else {
+        newSet.add(cellId);
+      }
+      return newSet;
+    });
+  };
+
   return (
     <Animated.View style={[styles.container]}>
       <ScrollView onLayout={onLayout}>
         <View style={[styles.grid, { padding: padding / 2 }]}>
           {[...Array(yearsToShow)].map((_, yearIndex) => (
             <View key={`year-${yearIndex}`} style={styles.row}>
-              {[...Array(WEEKS_PER_YEAR)].map((_, weekIndex) => (
-                <View
-                  key={`week-${yearIndex}-${weekIndex}`}
-                  style={[
-                    styles.cell,
-                    {
-                      width: cellSize,
-                      height: cellSize,
-                      margin: cellMargin,
-                      backgroundColor: 'red',
-                    },
-                  ]}
-                ></View>
-              ))}
+              {[...Array(WEEKS_PER_YEAR)].map((_, weekIndex) => {
+                const cellId = `${yearIndex}-${weekIndex}`;
+                const isPressed = pressedCells.has(cellId);
+
+                return (
+                  <Pressable
+                    key={`week-${cellId}`}
+                    onPress={() => toggleCell(cellId)}
+                    style={[
+                      styles.cell,
+                      {
+                        width: cellSize,
+                        height: cellSize,
+                        margin: cellMargin,
+                        backgroundColor: isPressed ? 'blue' : 'red',
+                      },
+                    ]}
+                  />
+                );
+              })}
             </View>
           ))}
         </View>
