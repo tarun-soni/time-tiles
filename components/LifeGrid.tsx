@@ -1,104 +1,150 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   Dimensions,
-  LayoutChangeEvent,
-  Animated,
   Pressable,
+  FlatList,
 } from 'react-native';
 import { Text } from './ui/text';
+import { TLifeData } from '@/types/LifeData';
+import { calcFromAge } from '@/utils/calcFromAge';
 
-const LifeGrid = ({ yearsToShow = 90, customCellSize = 10 }) => {
+const LifeGrid: React.FC<{
+  lifeData: TLifeData;
+}> = ({ lifeData }) => {
   const WEEKS_PER_YEAR = 52;
-  const padding = 16;
-  const cellMargin = 2;
+  const ROWS_PER_PAGE = 10; // Number of years (rows) to display per page
+  const PADDING = 16;
+  const CELL_MARGIN = 2;
 
-  const [containerWidth, setContainerWidth] = React.useState(
+  // const { weeksSinceBirth, totalWeeks } = calcFromAge(
+  //   lifeData.user.birth_date,
+  //   lifeData.user.max_age
+  // );
+
+  const [containerWidth, setContainerWidth] = useState(
     Dimensions.get('window').width
   );
 
-  // Add state for pressed cells
-  const [pressedCells, setPressedCells] = React.useState<Set<string>>(
-    new Set()
-  );
+  console.log('lifeData', lifeData);
+  const [currentPage, setCurrentPage] = useState(0);
 
   const cellSize =
-    customCellSize ||
     Math.floor(
-      (containerWidth - 2 * padding - WEEKS_PER_YEAR * 2 * cellMargin) /
+      (containerWidth - 2 * PADDING - WEEKS_PER_YEAR * 2 * CELL_MARGIN) /
         WEEKS_PER_YEAR
-    );
+    ) * 10;
 
-  const onLayout = (event: LayoutChangeEvent) => {
+  console.log('cellSize', cellSize);
+
+  const onLayout = (event: any) => {
     const { width } = event.nativeEvent.layout;
     setContainerWidth(width);
   };
 
-  const toggleCell = (cellId: string) => {
-    console.log('toggleCell', cellId);
-    setPressedCells((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(cellId)) {
-        newSet.delete(cellId);
-      } else {
-        newSet.add(cellId);
-      }
-      return newSet;
-    });
+  const startYearIndex = currentPage * ROWS_PER_PAGE;
+  const endYearIndex = Math.min(
+    startYearIndex + ROWS_PER_PAGE,
+    Math.ceil(lifeData.weeks.length / WEEKS_PER_YEAR)
+  );
+
+  const renderRow = ({ item: year }: { item: number }) => {
+    const startWeekIndex = year * WEEKS_PER_YEAR;
+    const weekData = lifeData.weeks.slice(
+      startWeekIndex,
+      startWeekIndex + WEEKS_PER_YEAR
+    );
+
+    return (
+      <View style={styles.row}>
+        {weekData.map((week, index) => (
+          <Pressable
+            key={`week-${year}-${index}`}
+            style={[
+              styles.cell,
+              {
+                width: cellSize,
+                height: cellSize,
+                margin: CELL_MARGIN,
+                backgroundColor: week.color || '#D1D5DB', // Default gray
+              },
+            ]}
+          >
+            {week && week.event.length > 0 ? (
+              <Text style={styles.cellText}>😅</Text>
+            ) : null}
+          </Pressable>
+        ))}
+      </View>
+    );
   };
 
   return (
-    <Animated.View style={[styles.container]}>
-      <ScrollView onLayout={onLayout}>
-        <View style={[styles.grid, { padding: padding / 2 }]}>
-          {[...Array(yearsToShow)].map((_, yearIndex) => (
-            <View key={`year-${yearIndex}`} style={styles.row}>
-              {[...Array(WEEKS_PER_YEAR)].map((_, weekIndex) => {
-                const cellId = `${yearIndex}-${weekIndex}`;
-                const isPressed = pressedCells.has(cellId);
-
-                return (
-                  <Pressable
-                    key={`week-${cellId}`}
-                    onPress={() => toggleCell(cellId)}
-                    style={[
-                      styles.cell,
-                      {
-                        width: cellSize,
-                        height: cellSize,
-                        margin: cellMargin,
-                        backgroundColor: isPressed ? 'blue' : 'red',
-                      },
-                    ]}
-                  />
-                );
-              })}
-            </View>
-          ))}
-        </View>
-      </ScrollView>
-    </Animated.View>
+    <View style={styles.container} onLayout={onLayout}>
+      <FlatList
+        data={Array.from(
+          { length: endYearIndex - startYearIndex },
+          (_, i) => startYearIndex + i
+        )}
+        keyExtractor={(item) => `year-${item}`}
+        renderItem={renderRow}
+        contentContainerStyle={{ padding: PADDING }}
+        showsVerticalScrollIndicator={false}
+      />
+      <View style={styles.pagination}>
+        <Pressable
+          onPress={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
+          disabled={currentPage === 0}
+        >
+          <Text style={styles.pageButton}>Previous</Text>
+        </Pressable>
+        <Pressable
+          onPress={() =>
+            setCurrentPage((prev) =>
+              Math.min(
+                prev + 1,
+                Math.ceil(
+                  lifeData.weeks.length / (ROWS_PER_PAGE * WEEKS_PER_YEAR)
+                ) - 1
+              )
+            )
+          }
+        >
+          <Text style={styles.pageButton}>Next</Text>
+        </Pressable>
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  grid: {
-    // padding is now dynamic
+    backgroundColor: '#F8F9FA',
   },
   row: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
   },
   cell: {
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 0.5,
-    borderColor: '#000',
-    // width, height, and margin are now dynamic
+    borderColor: '#CCC',
+  },
+  cellText: {
+    fontSize: 10,
+    color: '#333',
+  },
+  pagination: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 10,
+  },
+  pageButton: {
+    fontSize: 16,
+    color: 'blue',
   },
 });
 

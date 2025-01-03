@@ -4,11 +4,11 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "scripts": {
-    "start": "EXPO_USE_METRO_CONFIG_FILE=metro.config.cjs npx NODE_OPTIONS=--max_old_space_size=8192 expo start",
-    "start:clean": "EXPO_USE_METRO_CONFIG_FILE=metro.config.cjs NODE_OPTIONS=--max_old_space_size=8192 npx expo start -c",
-    "android": "NODE_OPTIONS=--max_old_space_size=8192 DARK_MODE=media expo start --android",
-    "ios": "NODE_OPTIONS=--max_old_space_size=8192 DARK_MODE=media expo start --ios",
-    "web": "NODE_OPTIONS=--max_old_space_size=8192 DARK_MODE=media expo start --web",
+    "start": "node --max-old-space-size=4096 node_modules/.bin/expo start",
+    "start:clean": "node --max-old-space-size=4096 node_modules/.bin/expo start -c",
+    "android": "node --max-old-space-size=4096 expo start --android",
+    "ios": "node --max-old-space-size=4096 expo start --ios",
+    "web": "node --max-old-space-size=4096 expo start --web",
     "postinstall": "patch-package"
   },
   "dependencies": {
@@ -60,7 +60,8 @@
     "react-native-screens": "3.31.1",
     "expo-linking": "~6.3.1",
     "expo-constants": "~16.0.2",
-    "expo-device": "~6.0.2"
+    "expo-device": "~6.0.2",
+    "@shopify/flash-list": "1.6.4"
   },
   "devDependencies": {
     "@babel/core": "^7.25.9",

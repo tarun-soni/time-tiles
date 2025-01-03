@@ -12,18 +12,21 @@ import { SplashScreen } from 'expo-router';
 import { useFonts } from 'expo-font';
 
 export default function App() {
-  const [loaded, error] = useFonts({
-    // satisfy
-    'Poppins-Thin': require('../assets/fonts/Poppins-Thin.ttf'), // fontWeight: "100",
-    'Poppins-ExtraLight': require('../assets/fonts/Poppins-ExtraLight.ttf'), // fontWeight: "200",
-    'Poppins-Light': require('../assets/fonts/Poppins-Light.ttf'), // fontWeight: "300",
-    'Poppins-Regular': require('../assets/fonts/Poppins-Regular.ttf'), // fontWeight: "400",
-    'Poppins-Medium': require('../assets/fonts/Poppins-Medium.ttf'), // fontWeight: "500",
-    'Poppins-SemiBold': require('../assets/fonts/Poppins-SemiBold.ttf'), // fontWeight: "600",
-    'Poppins-Bold': require('../assets/fonts/Poppins-Bold.ttf'), // fontWeight: "700",
-    'Poppins-ExtraBold': require('../assets/fonts/Poppins-ExtraBold.ttf'), // fontWeight: "800",
-    'Poppins-Black': require('../assets/fonts/Poppins-Black.ttf'), // fontWeight: "900",
-  });
+  // const [loaded, error] = useFonts({
+  //   // satisfy
+  //   'Poppins-Thin': require('../assets/fonts/Poppins-Thin.ttf'), // fontWeight: "100",
+  //   'Poppins-ExtraLight': require('../assets/fonts/Poppins-ExtraLight.ttf'), // fontWeight: "200",
+  //   'Poppins-Light': require('../assets/fonts/Poppins-Light.ttf'), // fontWeight: "300",
+  //   'Poppins-Regular': require('../assets/fonts/Poppins-Regular.ttf'), // fontWeight: "400",
+  //   'Poppins-Medium': require('../assets/fonts/Poppins-Medium.ttf'), // fontWeight: "500",
+  //   'Poppins-SemiBold': require('../assets/fonts/Poppins-SemiBold.ttf'), // fontWeight: "600",
+  //   'Poppins-Bold': require('../assets/fonts/Poppins-Bold.ttf'), // fontWeight: "700",
+  //   'Poppins-ExtraBold': require('../assets/fonts/Poppins-ExtraBold.ttf'), // fontWeight: "800",
+  //   'Poppins-Black': require('../assets/fonts/Poppins-Black.ttf'), // fontWeight: "900",
+  // });
+
+  const loaded = true;
+  const error = false;
 
   useEffect(() => {
     if (loaded || error) {
