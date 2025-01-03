@@ -1,120 +1,148 @@
 import React, { useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  Dimensions,
-  Pressable,
-  FlatList,
-} from 'react-native';
-import { Text } from './ui/text';
+import { View, StyleSheet, Dimensions } from 'react-native';
+import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
 import { TLifeData } from '@/types/LifeData';
-import { calcFromAge } from '@/utils/calcFromAge';
+import WeekCell from './WeekCell';
 
 const LifeGrid: React.FC<{
   lifeData: TLifeData;
 }> = ({ lifeData }) => {
   const WEEKS_PER_YEAR = 52;
-  const ROWS_PER_PAGE = 10; // Number of years (rows) to display per page
-  const PADDING = 16;
-  const CELL_MARGIN = 2;
+  const CELL_SIZE = 14;
+  const CELL_MARGIN = 1;
+  const screenWidth = Dimensions.get('window').width;
+  const [currentZoom, setCurrentZoom] = useState(1);
 
-  // const { weeksSinceBirth, totalWeeks } = calcFromAge(
-  //   lifeData.user.birth_date,
-  //   lifeData.user.max_age
-  // );
-
-  const [containerWidth, setContainerWidth] = useState(
-    Dimensions.get('window').width
-  );
-
-  console.log('lifeData', lifeData);
-  const [currentPage, setCurrentPage] = useState(0);
-
-  const cellSize =
-    Math.floor(
-      (containerWidth - 2 * PADDING - WEEKS_PER_YEAR * 2 * CELL_MARGIN) /
-        WEEKS_PER_YEAR
-    ) * 10;
-
-  console.log('cellSize', cellSize);
-
-  const onLayout = (event: any) => {
-    const { width } = event.nativeEvent.layout;
-    setContainerWidth(width);
+  const calculateWeeksLived = (birthDate: string) => {
+    const birth = new Date(birthDate);
+    const today = new Date();
+    const diffTime = Math.abs(today.getTime() - birth.getTime());
+    const diffWeeks = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7));
+    return diffWeeks;
   };
 
-  const startYearIndex = currentPage * ROWS_PER_PAGE;
-  const endYearIndex = Math.min(
-    startYearIndex + ROWS_PER_PAGE,
-    Math.ceil(lifeData.weeks.length / WEEKS_PER_YEAR)
-  );
+  const weeksLived = calculateWeeksLived(lifeData.user.birth_date);
+  const totalYears = Math.ceil(lifeData.weeks.length / WEEKS_PER_YEAR);
 
-  const renderRow = ({ item: year }: { item: number }) => {
-    const startWeekIndex = year * WEEKS_PER_YEAR;
-    const weekData = lifeData.weeks.slice(
-      startWeekIndex,
-      startWeekIndex + WEEKS_PER_YEAR
-    );
+  const getGroupLabel = (weekIndex: number, category: string) => {
+    if (category === 'Education') {
+      if (weekIndex >= 260 && weekIndex < 520) return 'Primary School';
+      if (weekIndex >= 520 && weekIndex < 780) return 'High School';
+      if (weekIndex >= 780 && weekIndex < 1040) return 'University';
+    }
+    return category;
+  };
+
+  const getGroupLength = (weekIndex: number, category: string): number => {
+    if (!category || category === 'Default') return 1;
+
+    let length = 0;
+    let currentIndex = weekIndex;
+
+    while (
+      currentIndex < lifeData.weeks.length &&
+      lifeData.weeks[currentIndex].category === category
+    ) {
+      length++;
+      currentIndex++;
+    }
+
+    return length;
+  };
+
+  const isPartOfGroup = (weekIndex: number, category: string) => {
+    if (!category || category === 'Default') return false;
+
+    const prevWeek = lifeData.weeks[weekIndex - 1];
+    const nextWeek = lifeData.weeks[weekIndex + 1];
 
     return (
-      <View style={styles.row}>
-        {weekData.map((week, index) => (
-          <Pressable
-            key={`week-${year}-${index}`}
-            style={[
-              styles.cell,
-              {
-                width: cellSize,
-                height: cellSize,
-                margin: CELL_MARGIN,
-                backgroundColor: week.color || '#D1D5DB', // Default gray
-              },
-            ]}
-          >
-            {week && week.event.length > 0 ? (
-              <Text style={styles.cellText}>😅</Text>
-            ) : null}
-          </Pressable>
-        ))}
-      </View>
+      (prevWeek && prevWeek.category === category) ||
+      (nextWeek && nextWeek.category === category)
     );
+  };
+
+  const isGroupStart = (weekIndex: number, category: string) => {
+    if (!category || category === 'Default') return false;
+
+    const prevWeek = lifeData.weeks[weekIndex - 1];
+    return !prevWeek || prevWeek.category !== category;
+  };
+
+  const isGroupEnd = (weekIndex: number, category: string) => {
+    if (!category || category === 'Default') return false;
+
+    const nextWeek = lifeData.weeks[weekIndex + 1];
+    return !nextWeek || nextWeek.category !== category;
+  };
+
+  const renderYearGrid = () => {
+    return Array.from({ length: totalYears }, (_, yearIndex) => {
+      const startWeekIndex = yearIndex * WEEKS_PER_YEAR;
+      const weekData = lifeData.weeks.slice(
+        startWeekIndex,
+        startWeekIndex + WEEKS_PER_YEAR
+      );
+
+      return (
+        <View key={yearIndex} style={styles.yearContainer}>
+          <View style={styles.weekRow}>
+            {weekData.map((week, weekIndex) => {
+              const absoluteWeekIndex = startWeekIndex + weekIndex;
+              const isInGroup = isPartOfGroup(absoluteWeekIndex, week.category);
+              const groupStart = isGroupStart(absoluteWeekIndex, week.category);
+              const groupLength = groupStart
+                ? getGroupLength(absoluteWeekIndex, week.category)
+                : 0;
+
+              return (
+                <View
+                  key={`week-${yearIndex}-${weekIndex}`}
+                  style={[
+                    currentZoom < 1 && groupStart && { flex: groupLength },
+                  ]}
+                >
+                  <WeekCell
+                    color={week.color || '#E8ECF0'}
+                    icon={week.icon}
+                    isLived={absoluteWeekIndex < weeksLived}
+                    isPartOfGroup={isInGroup}
+                    isGroupStart={groupStart}
+                    isGroupEnd={isGroupEnd(absoluteWeekIndex, week.category)}
+                    groupIcon={isInGroup ? undefined : week.icon}
+                    groupLabel={
+                      groupStart
+                        ? getGroupLabel(absoluteWeekIndex, week.category)
+                        : undefined
+                    }
+                    size={CELL_SIZE}
+                    zoomLevel={currentZoom}
+                    weekIndex={absoluteWeekIndex}
+                  />
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      );
+    });
   };
 
   return (
-    <View style={styles.container} onLayout={onLayout}>
-      <FlatList
-        data={Array.from(
-          { length: endYearIndex - startYearIndex },
-          (_, i) => startYearIndex + i
-        )}
-        keyExtractor={(item) => `year-${item}`}
-        renderItem={renderRow}
-        contentContainerStyle={{ padding: PADDING }}
-        showsVerticalScrollIndicator={false}
-      />
-      <View style={styles.pagination}>
-        <Pressable
-          onPress={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
-          disabled={currentPage === 0}
-        >
-          <Text style={styles.pageButton}>Previous</Text>
-        </Pressable>
-        <Pressable
-          onPress={() =>
-            setCurrentPage((prev) =>
-              Math.min(
-                prev + 1,
-                Math.ceil(
-                  lifeData.weeks.length / (ROWS_PER_PAGE * WEEKS_PER_YEAR)
-                ) - 1
-              )
-            )
-          }
-        >
-          <Text style={styles.pageButton}>Next</Text>
-        </Pressable>
-      </View>
+    <View style={styles.container}>
+      <ReactNativeZoomableView
+        maxZoom={3}
+        minZoom={0.5}
+        zoomStep={0.5}
+        initialZoom={1}
+        bindToBorders={true}
+        contentWidth={screenWidth}
+        contentHeight={totalYears * (CELL_SIZE + CELL_MARGIN * 2)}
+        style={styles.zoomContainer}
+        onZoomAfter={(event: any) => setCurrentZoom(event?.zoomLevel || 1)}
+      >
+        <View style={styles.gridContainer}>{renderYearGrid()}</View>
+      </ReactNativeZoomableView>
     </View>
   );
 };
@@ -122,29 +150,30 @@ const LifeGrid: React.FC<{
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F0F4F8',
   },
-  row: {
+  zoomContainer: {
+    flex: 1,
+  },
+  gridContainer: {
+    padding: 4,
+    backgroundColor: '#F0F4F8',
+  },
+  yearContainer: {
+    marginBottom: 2,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  weekRow: {
     flexDirection: 'row',
-  },
-  cell: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 0.5,
-    borderColor: '#CCC',
-  },
-  cellText: {
-    fontSize: 10,
-    color: '#333',
-  },
-  pagination: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 10,
-  },
-  pageButton: {
-    fontSize: 16,
-    color: 'blue',
+    justifyContent: 'flex-start',
+    flexWrap: 'nowrap',
   },
 });
 
